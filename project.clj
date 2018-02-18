@@ -7,7 +7,7 @@
   :plugins [[lein-codox "0.10.3"]
             [lein-eftest "0.4.3"]
             [lein-cljfmt "0.5.7"]]
-  :codox {:namespaces [#"^fhofherr\.clj-result\."]
+  :codox {:namespaces [#"^fhofherr\.clj-result(\.)?"]
           :metadata {:doc/format :markdown}}
   :aliases {"test" ["eftest"]}
   :profiles {:dev {:source-paths ["dev"]
