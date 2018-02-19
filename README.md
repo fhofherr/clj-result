@@ -1,10 +1,20 @@
 # clj-result
 
-A Clojure library designed to ... well, that part is up to you.
+`clj-result` allows to perform a set of operations until either all
+have succeeded or one has failed.
 
 ## Usage
 
-FIXME
+Add
+
+```clojure
+[fhofherr/clj-result "0.1.0-SNAPSHOT"]
+```
+
+to your projects dependencies.
+
+Use the `attempt` and `attempt-v` macros to perform a set of potentially
+failing operations.
 
 ## License
 
