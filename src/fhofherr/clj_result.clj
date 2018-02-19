@@ -83,3 +83,16 @@
   of the success or error."
   [bindings & body]
   `(value (attempt ~bindings ~@body)))
+
+(defmacro attempt-as->
+  "Binds `init-result` to `sym`. If `init-result` is a success it evaluates the
+  forms until it exhausted all or one evaluated to an error.  Returns the
+  result of the last form, or the first encountered error."
+  [init-result sym & forms]
+  `(attempt [~sym ~init-result ~@(mapcat #(vector sym %) forms)] ~sym))
+
+(defmacro attempt-v-as->
+  "Just like [[attempt-as->]] but returns the value of the last encountered
+  success or the first encountered error."
+  [init-result sym & forms]
+  `(value (attempt-as-> ~init-result ~sym ~@forms)))

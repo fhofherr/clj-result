@@ -87,3 +87,33 @@
            (result/attempt-v [x (result/error :error)
                             y (result/success :a)]
                            y)))))
+
+(deftest attempt-as->
+
+  (testing "evaluate to last success"
+    (is (= (result/success :a)
+           (result/attempt-as-> (result/success :a) $)))
+    (is (= (result/success 2)
+           (result/attempt-as-> (result/success 1) $
+                                (result/success (+ 1 $))))))
+
+  (testing "evaluate to first error"
+    (is (= (result/error :a)
+           (result/attempt-as-> (result/error :a) $)))
+    (is (= (result/error :error)
+           (result/attempt-as-> (result/success :a) $
+                                (result/error :error)
+                                (result/success :b))))))
+
+(deftest attempt-v-as->
+
+  (testing "return value of last success"
+    (is (= :a (result/attempt-v-as-> (result/success :a) $)))
+    (is (= 2 (result/attempt-v-as-> (result/success 1) $
+                                    (result/success (+ 1 $))))))
+
+  (testing "return value of first error"
+    (is (= :error (result/attempt-v-as-> (result/error :error) $)))
+    (is (= :error (result/attempt-v-as-> (result/success 1) $
+                                         (result/error :error)
+                                         (result/success (+ 1 $)))))))
