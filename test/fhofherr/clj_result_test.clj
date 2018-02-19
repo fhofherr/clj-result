@@ -50,3 +50,40 @@
           res (result/m-bind init-error f)]
       (is (result/error? res))
       (is (= 1 (result/value res))))))
+
+(deftest swap-pairs
+  (is (= [] (#'result/swap-pairs [])))
+  (is (thrown? AssertionError (#'result/swap-pairs [:a])))
+  (is (= [:b :a] (#'result/swap-pairs [:a :b]))))
+
+(deftest attempt
+
+  (testing "single binding"
+    (is (= (result/success :a)
+           (result/attempt [x (result/success :a)]
+                           x))))
+
+  (testing "multiple bindings"
+    (is (= (result/success :b)
+           (result/attempt [x (result/success :a)
+                            y (result/success :b)]
+                           y))))
+
+  (testing "abort on error"
+    (is (= (result/error :error)
+           (result/attempt [x (result/error :error)
+                            y (result/success :a)]
+                           y)))))
+
+(deftest attempt-v
+
+  (testing "get success value"
+    (is (= :a
+           (result/attempt-v [x (result/success :a)]
+                           x))))
+
+  (testing "get error value"
+    (is (= :error
+           (result/attempt-v [x (result/error :error)
+                            y (result/success :a)]
+                           y)))))

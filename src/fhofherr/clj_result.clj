@@ -41,3 +41,30 @@
   (if (success? result)
     (-> result value f)
     result))
+
+(defn- swap-pairs
+  [xs]
+  {:pre [(even? (count xs))]}
+  (let [xf (comp (partition-all 2)
+                 (mapcat (fn [[x y]] [y x])))]
+    (sequence xf xs)))
+
+(defn- emit-m-bind
+  [[r s & xs] body]
+  (if xs
+    `(m-bind ~r (fn [~s] ~(emit-m-bind xs body)))
+    `(m-bind ~r (fn [~s] (success ~@body)))))
+
+(defmacro attempt
+  "Attempt all given operations and bind the values to the respective symbols.
+  Return the result of evaluating `body` as a `success`. Abort immediately if
+  one operations returns an error and return the error instead of the body."
+  [bindings & body]
+  (let [swapped (swap-pairs bindings)]
+    (emit-m-bind swapped body)))
+
+(defmacro attempt-v
+  "Attempt all given operations just like [[attempt]] but return the value
+  of the success or error."
+  [bindings & body]
+  `(value (attempt ~bindings ~@body)))
