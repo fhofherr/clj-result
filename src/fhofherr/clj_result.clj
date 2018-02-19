@@ -1,21 +1,36 @@
 (ns fhofherr.clj-result)
 
-(defprotocol CljResult
-  (error? [this] "Check if the result is an error.")
-  (success? [this] "Check if the result is an success.")
-  (value [this] "Get the results value."))
+(defprotocol ^:no-doc CljResult
+  (-error? [this] "Check if the result is an error.")
+  (-success? [this] "Check if the result is an success.")
+  (-value [this] "Get the results value."))
 
 (defrecord ^:private CljError [value]
   CljResult
-  (error? [_] true)
-  (success? [_] false)
-  (value [this] (:value this)))
+  (-error? [_] true)
+  (-success? [_] false)
+  (-value [this] (:value this)))
 
 (defrecord ^:private CljSuccess [value]
   CljResult
-  (error? [_] false)
-  (success? [_] true)
-  (value [this] (:value this)))
+  (-error? [_] false)
+  (-success? [_] true)
+  (-value [this] (:value this)))
+
+(defn error?
+  "Check if the result is an error"
+  [result]
+  (-error? result))
+
+(defn success?
+  "Check if the result is a success"
+  [result]
+  (-success? result))
+
+(defn value
+  "Get the result value"
+  [result]
+  (-value result))
 
 (defn error
   "Turn `value` into an error."
@@ -38,7 +53,7 @@
   where `v` is the value of the result passed to `m-bind`, `R` is a new result
   with a potentially updated value `w`."
   [result f]
-  (if (success? result)
+  (if (-success? result)
     (-> result value f)
     result))
 
