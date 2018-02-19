@@ -6,4 +6,9 @@ This change log follows the conventions of
 
 ## [Unreleased]
 
+### Added
+
+*   `attempt` and `attempt-v` macros. Attempt to perform the passed operations
+     until are executed successfully or one returned an error.
+
 [Unreleased]: https://github.com/fhofherr/clj-result/master
