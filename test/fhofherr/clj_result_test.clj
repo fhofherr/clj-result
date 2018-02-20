@@ -117,3 +117,19 @@
     (is (= :error (result/attempt-v-as-> (result/success 1) $
                                          (result/error :error)
                                          (result/success (+ 1 $)))))))
+
+(deftest map-e-map-s-and-map-v
+  (let [error (result/error 1)
+        success (result/success 1)]
+
+    (testing "map-v applies a function to the results value"
+      (is (= 2 (->> error (result/map-v inc) result/value)))
+      (is (= 2 (->> success (result/map-v inc) result/value))))
+
+    (testing "map-e applies a funtion to errors only"
+      (is (= 2 (->> error (result/map-e inc) result/value)))
+      (is (= 1 (->> success (result/map-e inc) result/value))))
+
+    (testing "map-s applies a funtion to successes only"
+      (is (= 1 (->> error (result/map-s inc) result/value)))
+      (is (= 2 (->> success (result/map-s inc) result/value))))))

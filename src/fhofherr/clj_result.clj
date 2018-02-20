@@ -5,7 +5,8 @@
 (defprotocol ^:no-doc CljResult
   (-error? [this] "Check if the result is an error.")
   (-success? [this] "Check if the result is an success.")
-  (-value [this] "Get the results value."))
+  (-value [this] "Get the results value.")
+  (-update-value [this f] "Apply the function f to the results value"))
 
 (defn result?
   "Check if `x` is a result."
@@ -18,13 +19,15 @@
   CljResult
   (-error? [_] true)
   (-success? [_] false)
-  (-value [this] (:value this)))
+  (-value [this] (:value this))
+  (-update-value [this f] (-> value f ->CljError)))
 
 (defrecord ^:private CljSuccess [value]
   CljResult
   (-error? [_] false)
   (-success? [_] true)
-  (-value [this] (:value this)))
+  (-value [this] (:value this))
+  (-update-value [this f] (-> value f ->CljSuccess)))
 
 (defn error?
   "Check if the result is an error"
@@ -151,3 +154,43 @@
         :args (s/cat :init-result any?
                      :sym ::cs/local-name
                      :forms (s/* any?)))
+
+(defn map-v
+  "Apply the function `f` to the value wrapped by `result`. Return a result
+  of the same kind."
+  [f result]
+  (-update-value result f))
+
+(s/fdef map-v
+        :args (s/cat :result ::clj-result
+                    :f (s/fspec :args (s/cat :x any?)
+                                :ret any?))
+        :ret ::clj-result)
+
+(defn map-e
+  "Apply the function `f` to value wrapped by `result` if `result`
+  is an error. Return an error with the updated value."
+  [f result]
+  (if (error? result)
+    (map-v f result)
+    result))
+
+(s/fdef map-e
+        :args (s/cat :result ::clj-result
+                    :f (s/fspec :args (s/cat :x any?)
+                                :ret any?))
+        :ret ::clj-result)
+
+(defn map-s
+  "Apply the function `f` to value wrapped by `result` if `result`
+  is a success Return a success with the updated value."
+  [f result]
+  (if (success? result)
+    (map-v f result)
+    result))
+
+(s/fdef map-s
+        :args (s/cat :result ::clj-result
+                    :f (s/fspec :args (s/cat :x any?)
+                                :ret any?))
+        :ret ::clj-result)
