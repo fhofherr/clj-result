@@ -50,7 +50,9 @@
 (defn value
   "Get the result value"
   [result]
-  (-value result))
+  (if (result? result)
+    (-value result)
+    result))
 
 (s/fdef value
         :args (s/cat :result ::clj-result)
@@ -68,28 +70,34 @@
 (defn success
   "Turn `value` into a success."
   [value]
-  (->CljSuccess value))
+  (cond
+    (not (result? value)) (->CljSuccess value)
+    (error? value) (throw (IllegalArgumentException.
+                            "Can't turn an error into a success"))
+    :else value))
 
 (s/fdef success
         :args (s/cat :value any?)
         :ret (s/and ::clj-result success?))
 
 (defn m-bind
-  "Apply the function `f` to `result` if `result` is a success. Do nothing
-  to `result` if it is an error.
+  "Apply the function `f` to `v` if `v` is not an error. Do nothing
+  to `v` if it is an error.
 
-  `f` is expected to have the type:
+  `f` is expected to have the type
 
-      v -> R w
+      v -> w
 
-  where `v` is the value of the result passed to `m-bind`, `R` is a new result
-  with a potentially updated value `w`."
-  [result f]
-  {:pre [(result? result) (fn? f)]
+  where `w` is a potentially updated value `w`."
+  [v f]
+  {:pre [(fn? f)]
    :post [#(result? %)]}
-  (if (-success? result)
-    (-> result value f)
-    result))
+  (if (and (result? v) (error? v))
+    v
+    (let [next-result (-> v success value f)]
+      (if (result? next-result)
+        next-result
+        (success next-result)))))
 
 (s/fdef m-bind
         :args (s/cat :result ::clj-result

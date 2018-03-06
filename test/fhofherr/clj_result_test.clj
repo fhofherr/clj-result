@@ -25,6 +25,11 @@
       (is (result/success? res))
       (is (= 2 (result/value res)))))
 
+  (testing "auto-wrap values into success"
+    (let [f #(+ 1 %)
+          res (result/m-bind 1 f)]
+      (is (= 2 (result/value res)))))
+
   (testing "left identity for success"
     (let [f (fn [v] (result/success (+ 1 v)))]
       (is (= (result/m-bind (result/success 1) f)
