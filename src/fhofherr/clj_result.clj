@@ -2,37 +2,25 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.core.specs.alpha :as cs]))
 
-(defprotocol ^:no-doc CljResult
-  (-value [this] "Get the results value.")
-  (-update-value [this f] "Apply the function f to the results value"))
-
-(defn result?
-  "Check if `x` is a result."
-  [x]
-  (satisfies? CljResult x))
-
-(s/def ::clj-result result?)
-
-(defrecord ^:private CljError [value]
-  CljResult
-  (-value [this] (:value this))
-  (-update-value [this f] (-> value f ->CljError)))
+(defn end?
+  "Check if `v` should end a sequence of computations."
+  [v]
+  ((complement nil?) (::end v)))
 
 (defn value
-  "Get the result value"
-  [result]
-  (if (result? result)
-    (-value result)
-    result))
+  "Get the value of `v` if it signals the end of a sequence of
+  computations or `v`."
+  [v]
+  (::end v v))
 
-(defn error
-  "Turn `value` into an error."
-  [value]
-  (->CljError value))
+(defn end
+  "End a sequence of computations with `v` as result."
+  [v]
+  {::end v})
 
 (defn m-bind
-  "Apply the function `f` to `v` if `v` is not an error. Do nothing
-  to `v` if it is an error.
+  "Apply the function `f` to `v` if `v` does not signal an ended sequence
+  of computations.
 
   `f` is expected to have the type
 
@@ -40,9 +28,8 @@
 
   where `w` is a potentially updated value `w`."
   [v f]
-  {:pre [(fn? f)]
-   :post [#(result? %)]}
-  (if (result? v)
+  {:pre [(fn? f)]}
+  (if (end? v)
     v
     (-> v value f)))
 
@@ -62,7 +49,7 @@
 (defmacro attempt
   "Attempt all given operations and bind the values to the respective symbols.
   Return the result of evaluating `body`. Abort immediately if one operation
-  returns an error and return the error instead of the body."
+  returns a value signaling an end and return that value instead."
   [bindings & body]
   (let [swapped (swap-pairs bindings)]
     (emit-m-bind swapped body)))
@@ -72,11 +59,12 @@
                      :body any?))
 
 (defmacro attempt-as->
-  "Binds `init-result` to `sym`. If `init-result` is not an error it evaluates
-  the forms until it exhausted all or one evaluated to an error. Returns the
-  result of the last form, or the first encountered error."
-  [init-result sym & forms]
-  `(attempt [~sym ~init-result ~@(mapcat #(vector sym %) forms)] ~sym))
+  "Binds `init-value` to `sym`. If `init-value` does not signal an ended
+  sequence of computations it evaluates the forms until it exhausted all or one
+  signals the computations to end. Returns the result of the last form, or
+  the first value singaling an end."
+  [init-value sym & forms]
+  `(attempt [~sym ~init-value ~@(mapcat #(vector sym %) forms)] ~sym))
 
 (s/fdef attempt-as->
         :args (s/cat :init-result any?
@@ -84,24 +72,22 @@
                      :forms (s/* any?)))
 
 (defn map-v
-  "Apply the function `f` to the value wrapped by `result`. Return a result
-  of the same kind."
-  [f result]
-  (if (result? result)
-    (-update-value result f)
-    (f result)))
+  "Apply the function `f` to the value `v`."
+  [f v]
+  (if (end? v)
+    (update-in v [::end] f)
+    (f v)))
 
 (defn map-e
-  "Apply the function `f` to value wrapped by `result` if `result`
-  is an error. Return an error with the updated value."
-  [f result]
-  (if (result? result)
-    (map-v f result)
-    result))
+  "Apply the function `f` to `v` if `v` is signals an ended computation."
+  [f v]
+  (if (end? v)
+    (map-v f v)
+    v))
 
 (defn map-s
-  "Apply the function `f` to `v` if `v` is not an error."
-  [f result]
-  (if ((complement result?) result)
-    (map-v f result)
-    result))
+  "Apply the function `f` to `v` if `v` is not an ended computation."
+  [f v]
+  (if (end? v)
+    v
+    (map-v f v)))

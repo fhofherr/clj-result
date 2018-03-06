@@ -4,8 +4,8 @@
 
 (deftest error-implments-result
   (let [value "Ooops!"
-        err (result/error value)]
-    (is (true? (result/result? err)))
+        err (result/end value)]
+    (is (true? (result/end? err)))
     (is (= value (result/value err)))))
 
 (deftest m-bind
@@ -33,10 +33,10 @@
              (result/m-bind s (fn [v] (result/m-bind (f v) g)))))))
 
   (testing "do not apply function to error"
-    (let [init-error (result/error 1)
+    (let [init-error (result/end 1)
           f (fn [v] (+ 1 v))
           res (result/m-bind init-error f)]
-      (is (result/result? res))
+      (is (result/end? res))
       (is (= 1 (result/value res))))))
 
 (deftest swap-pairs
@@ -56,8 +56,8 @@
                            y))))
 
   (testing "abort on error"
-    (is (= (result/error :error)
-           (result/attempt [x (result/error :error)
+    (is (= (result/end :end)
+           (result/attempt [x (result/end :end)
                             y :a]
                            y)))))
 
@@ -71,15 +71,15 @@
                                 (+ 1 $)))))
 
   (testing "evaluate to first error"
-    (is (= (result/error :a)
-           (result/attempt-as-> (result/error :a) $)))
-    (is (= (result/error :error)
+    (is (= (result/end :a)
+           (result/attempt-as-> (result/end :a) $)))
+    (is (= (result/end :end)
            (result/attempt-as-> :a $
-                                (result/error :error)
+                                (result/end :end)
                                 :b)))))
 
 (deftest map-e-map-s-and-map-v
-  (let [error (result/error 1)
+  (let [error (result/end 1)
         v 1]
 
     (testing "map-v applies a function to the results value"
