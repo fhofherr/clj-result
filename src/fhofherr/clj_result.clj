@@ -21,6 +21,19 @@
   [v]
   {::end v})
 
+(defmacro end-ex-info
+  "Wraps `op` in a `try` and catch any `clojure.lang.ExceptionInfo` it
+  may throw."
+  [op]
+  `(try
+    ~op
+    (catch clojure.lang.ExceptionInfo e#
+      (end e#))))
+
+(s/fdef end-ex-info
+        :args (s/cat :op any?)
+        :ret any?)
+
 (defn continue
   "Apply the function `f` to `v` if `v` does not signal an ended sequence
   of computations.

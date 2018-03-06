@@ -15,6 +15,21 @@
     (is (true? (result/continue? value)))
     (is (= value (result/value (result/end value))))))
 
+(deftest end-ex-info
+
+  (testing "returns value"
+    (let [value "value"]
+      (is (= value (result/end-ex-info value)))))
+
+  (testing "catches ex-info"
+    (let [exi (ex-info "Ooops" {:cause "reason"})]
+      (is (= (result/end exi)
+             (result/end-ex-info (throw exi))))))
+
+  (testing "lets all other exceptions pass"
+    (let [ex (Exception. "Kaboom")]
+      (is (thrown? Exception (result/end-ex-info (throw ex)))))))
+
 (deftest continue
 
   (testing "apply function to value"
