@@ -2,7 +2,12 @@
   (:require [clojure.test :refer :all]
             [fhofherr.clj-result :as result]))
 
-(deftest end-wraps-a-value
+(deftest end
+  (is (true? (result/end? (result/end nil))))
+  (is (false? (result/continue? (result/end nil))))
+  (is (false? (result/continue? (result/end nil))))
+  (is (true? (result/continue? nil)))
+
   (let [value "value"]
     (is (true? (result/end? (result/end value))))
     (is (false? (result/continue? (result/end value))))
@@ -38,7 +43,9 @@
           f (fn [v] (+ 1 v))
           res (result/continue init-end f)]
       (is (result/end? res))
-      (is (= 1 (result/value res))))))
+      (is (= 1 (result/value res))))
+    (is (= (result/end nil)
+           (result/continue (result/end nil) (constantly 1))))))
 
 (deftest swap-pairs
   (is (= [] (#'result/swap-pairs [])))
@@ -77,7 +84,20 @@
     (is (= (result/end :end)
            (result/attempt-as-> :a $
                                 (result/end :end)
-                                :b)))))
+                                :b)))
+    (is (= (result/end nil)
+           (result/attempt-as-> :a $
+                                (result/end nil)
+                                :b))))
+
+  (testing "do not continue after end"
+    (let [called (atom false)]
+      (is (= (result/end 2)
+             (result/attempt-as-> 1 $
+                                  (inc $)
+                                  (result/end $)
+                                  (reset! called true))))
+      (is (false? @called)))))
 
 (deftest map-e-map-s-and-map-v
   (let [end (result/end 1)

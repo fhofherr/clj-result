@@ -5,7 +5,8 @@
 (defn end?
   "Check if `v` should end a sequence of computations."
   [v]
-  ((complement nil?) (::end v)))
+  (and (map? v)
+       (contains? v ::end)))
 
 (def ^{:doc "Opposite of [[end?]]"} continue? (complement end?))
 
@@ -42,10 +43,10 @@
                  (mapcat (fn [[x y]] [y x])))]
     (sequence xf xs)))
 
-(defn- emit-m-bind
+(defn- emit-continue
   [[r s & xs] body]
   (if xs
-    `(continue ~r (fn [~s] ~(emit-m-bind xs body)))
+    `(continue ~r (fn [~s] ~(emit-continue xs body)))
     `(continue ~r (fn [~s] ~@body))))
 
 (defmacro attempt
@@ -54,7 +55,7 @@
   returns a value signaling an end and return that value instead."
   [bindings & body]
   (let [swapped (swap-pairs bindings)]
-    (emit-m-bind swapped body)))
+    (emit-continue swapped body)))
 
 (s/fdef attempt
         :args (s/cat :bindings ::cs/bindings
