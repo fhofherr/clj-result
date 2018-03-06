@@ -2,40 +2,41 @@
   (:require [clojure.test :refer :all]
             [fhofherr.clj-result :as result]))
 
-(deftest error-implments-result
-  (let [value "Ooops!"
-        err (result/end value)]
-    (is (true? (result/end? err)))
-    (is (= value (result/value err)))))
+(deftest end-wraps-a-value
+  (let [value "value"]
+    (is (true? (result/end? (result/end value))))
+    (is (false? (result/continue? (result/end value))))
+    (is (false? (result/end? value)))
+    (is (true? (result/continue? value)))
+    (is (= value (result/value (result/end value))))))
 
-(deftest m-bind
+(deftest continue
 
   (testing "apply function to value"
-    (let [init-value 1
-          f (fn [v] (+ 1 v))
-          res (result/m-bind init-value f)]
+    (let [value 1
+          res (result/continue value #(+ 1 %))]
       (is (= 2 res))))
 
   (testing "left identity"
     (let [f (fn [v] (+ 1 v))]
-      (is (= (result/m-bind 1 f) (f 1)))))
+      (is (= (result/continue 1 f) (f 1)))))
 
   (testing "right identity"
     (let [s 1
           f identity]
-      (is (= s (result/m-bind s f)))))
+      (is (= s (result/continue s f)))))
 
   (testing "associativity"
     (let [s 1
           f (fn [v] (+ 1 v))
           g (fn [v] (+ 10 v))]
-      (is (= (result/m-bind (result/m-bind s f) g)
-             (result/m-bind s (fn [v] (result/m-bind (f v) g)))))))
+      (is (= (result/continue (result/continue s f) g)
+             (result/continue s (fn [v] (result/continue (f v) g)))))))
 
-  (testing "do not apply function to error"
-    (let [init-error (result/end 1)
+  (testing "do not apply function to an end"
+    (let [init-end (result/end 1)
           f (fn [v] (+ 1 v))
-          res (result/m-bind init-error f)]
+          res (result/continue init-end f)]
       (is (result/end? res))
       (is (= 1 (result/value res))))))
 
@@ -55,7 +56,7 @@
                             y :b]
                            y))))
 
-  (testing "abort on error"
+  (testing "abort on end"
     (is (= (result/end :end)
            (result/attempt [x (result/end :end)
                             y :a]
@@ -70,7 +71,7 @@
            (result/attempt-as-> 1 $
                                 (+ 1 $)))))
 
-  (testing "evaluate to first error"
+  (testing "evaluate to first end"
     (is (= (result/end :a)
            (result/attempt-as-> (result/end :a) $)))
     (is (= (result/end :end)
@@ -79,17 +80,17 @@
                                 :b)))))
 
 (deftest map-e-map-s-and-map-v
-  (let [error (result/end 1)
+  (let [end (result/end 1)
         v 1]
 
     (testing "map-v applies a function to the results value"
-      (is (= 2 (->> error (result/map-v inc) result/value)))
+      (is (= 2 (->> end (result/map-v inc) result/value)))
       (is (= 2 (->> v (result/map-v inc) result/value))))
 
-    (testing "map-e applies a funtion to errors only"
-      (is (= 2 (->> error (result/map-e inc) result/value)))
+    (testing "map-e applies a funtion to ends only"
+      (is (= 2 (->> end (result/map-e inc) result/value)))
       (is (= 1 (->> v (result/map-e inc) result/value))))
 
-    (testing "map-s applies a funtion to non-errors only"
-      (is (= 1 (->> error (result/map-s inc) result/value)))
+    (testing "map-s applies a funtion to non-ends only"
+      (is (= 1 (->> end (result/map-s inc) result/value)))
       (is (= 2 (->> v (result/map-s inc) result/value))))))

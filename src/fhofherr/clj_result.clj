@@ -7,6 +7,8 @@
   [v]
   ((complement nil?) (::end v)))
 
+(def ^{:doc "Opposite of [[end?]]"} continue? (complement end?))
+
 (defn value
   "Get the value of `v` if it signals the end of a sequence of
   computations or `v`."
@@ -18,7 +20,7 @@
   [v]
   {::end v})
 
-(defn m-bind
+(defn continue
   "Apply the function `f` to `v` if `v` does not signal an ended sequence
   of computations.
 
@@ -43,8 +45,8 @@
 (defn- emit-m-bind
   [[r s & xs] body]
   (if xs
-    `(m-bind ~r (fn [~s] ~(emit-m-bind xs body)))
-    `(m-bind ~r (fn [~s] ~@body))))
+    `(continue ~r (fn [~s] ~(emit-m-bind xs body)))
+    `(continue ~r (fn [~s] ~@body))))
 
 (defmacro attempt
   "Attempt all given operations and bind the values to the respective symbols.
