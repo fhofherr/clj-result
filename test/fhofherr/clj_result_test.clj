@@ -80,19 +80,6 @@
                             y (result/success :a)]
                            y)))))
 
-(deftest attempt-v
-
-  (testing "get success value"
-    (is (= :a
-           (result/attempt-v [x (result/success :a)]
-                           x))))
-
-  (testing "get error value"
-    (is (= :error
-           (result/attempt-v [x (result/error :error)
-                            y (result/success :a)]
-                           y)))))
-
 (deftest attempt-as->
 
   (testing "evaluate to last success"
@@ -109,19 +96,6 @@
            (result/attempt-as-> (result/success :a) $
                                 (result/error :error)
                                 (result/success :b))))))
-
-(deftest attempt-v-as->
-
-  (testing "return value of last success"
-    (is (= :a (result/attempt-v-as-> (result/success :a) $)))
-    (is (= 2 (result/attempt-v-as-> (result/success 1) $
-                                    (result/success (+ 1 $))))))
-
-  (testing "return value of first error"
-    (is (= :error (result/attempt-v-as-> (result/error :error) $)))
-    (is (= :error (result/attempt-v-as-> (result/success 1) $
-                                         (result/error :error)
-                                         (result/success (+ 1 $)))))))
 
 (deftest map-e-map-s-and-map-v
   (let [error (result/error 1)

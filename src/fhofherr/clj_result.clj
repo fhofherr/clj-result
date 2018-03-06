@@ -130,16 +130,6 @@
         :args (s/cat :bindings ::cs/bindings
                      :body any?))
 
-(defmacro attempt-v
-  "Attempt all given operations just like [[attempt]] but return the value
-  of the success or error."
-  [bindings & body]
-  `(value (attempt ~bindings ~@body)))
-
-(s/fdef attempt-v
-        :args (s/cat :bindings ::cs/bindings
-                     :body any?))
-
 (defmacro attempt-as->
   "Binds `init-result` to `sym`. If `init-result` is a success it evaluates the
   forms until it exhausted all or one evaluated to an error.  Returns the
@@ -148,17 +138,6 @@
   `(attempt [~sym ~init-result ~@(mapcat #(vector sym %) forms)] ~sym))
 
 (s/fdef attempt-as->
-        :args (s/cat :init-result any?
-                     :sym ::cs/local-name
-                     :forms (s/* any?)))
-
-(defmacro attempt-v-as->
-  "Just like [[attempt-as->]] but returns the value of the last encountered
-  success or the first encountered error."
-  [init-result sym & forms]
-  `(value (attempt-as-> ~init-result ~sym ~@forms)))
-
-(s/fdef attempt-v-as->
         :args (s/cat :init-result any?
                      :sym ::cs/local-name
                      :forms (s/* any?)))
